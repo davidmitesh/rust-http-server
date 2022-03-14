@@ -1,8 +1,8 @@
+#![allow(dead_code)]
 mod server;
 mod http;
 use server::Server;
-use http::Method;
-use http::Request;
+
 
 
 fn main() {

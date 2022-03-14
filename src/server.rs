@@ -2,10 +2,12 @@
 //every file in rust is treated as a module. so no need to define it explicitly
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
-
+use crate::http::Request;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 // mod server{
     pub struct Server {
-        addr : String,
+        addr : String
     }   
     impl Server{
         pub fn new(addr : String) -> Self {
@@ -44,7 +46,12 @@ use std::net::{TcpListener, TcpStream};
                         let mut buffer:[u8;1024] = [0; 1024]; //allocating 1024 bytes
                         match stream.read(&mut buffer){
                             Ok(_) => {
-                                println!("Received a request : {}",String::from_utf8_lossy(&buffer))
+                                println!("Received a request : {}",String::from_utf8_lossy(&buffer));
+                                match Request::try_from(&buffer[..]) {
+                                    Ok(request) => {},
+                                    Err(e) => println!("Failed to parse the request : {}",e)
+                                }
+                                // let res:&Result<Request,_> = &buffer[..].try_into(); //This is the another alternative to the conversion function
                             },
                             Err(e) => println!("Failed to read from connection : {}",e)
                         } 
