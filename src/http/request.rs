@@ -1,17 +1,34 @@
 // pub mod request {
     use super::method::{Method,MethodError};
+    use super::query_string::{QueryString};
     use std::convert::TryFrom;
     use std::error::Error;
     use std::str;
     use std::fmt::{Display,Formatter,Result as FmtResult,Debug};
     use std::str::Utf8Error;
+
+    #[derive(Debug)]
     pub struct Request<'buf>{
         path : &'buf str,
-        query_string : Option<&'buf str>, //This overcomes the fear of null
+        query_string : Option<QueryString<'buf>>, //This overcomes the fear of null
         method :  Method //here by specifying super, we are referring to the parent module 
     }
 
     //Lifetimes doesnot allow us to choose how long a value will live but It allows us to communicate to the compiler that some references are "related" and are expected to share the same lifetime.
+
+    impl<'buf> Request<'buf>{
+        pub fn path(&self) -> &str{
+            &self.path
+        }
+
+        pub fn method(&self) -> &Method {
+            &self.method
+        }
+
+        pub fn query_string(&self) -> Option<&QueryString>{
+            self.query_string.as_ref()
+        }
+    }
     
     impl<'buf> TryFrom<&'buf [u8]> for Request<'buf>{
         type Error = ParseError;
@@ -33,7 +50,7 @@
             //The above code can be compactly written as :
             let (method,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;//here variable request is shadowed
             let (mut path,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-            let (protocol,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+            let (protocol,_) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
             if protocol != "HTTP/1.1" {
                 return Err(ParseError::InvalidProtocol);
@@ -58,7 +75,7 @@
             // }
              //There is also another method that rust provides in the case where we require only to evaluate on the some condition and ignore the none condition
             if let Some(i) = path.find('?'){
-                query_string = Some(&path[i+1..]);
+                query_string = Some(QueryString::from(&path[i+1..]));
                 path = &path[..i];
             }
 

@@ -1,9 +1,11 @@
 use std::collections::HashMap;
+#[derive(Debug)]
 pub struct QueryString<'buf>{
     data : HashMap<&'buf str,Value<'buf>>
 }
 
 //In rust, heap allocated dynamic array is called Vector.
+#[derive(Debug)]
 pub enum Value<'buf> {
     Single(&'buf str),
     Multiple(Vec<&'buf str>)
@@ -22,9 +24,19 @@ impl<'buf> From<&'buf str> for QueryString<'buf>{
         for sub_str in s.split('&'){
             let mut key = sub_str;
             let mut val = "";
-            if let Some(i) = s.find("="){
-                key = &sub_str[]
+            if let Some(i) = sub_str.find("="){
+                key = &sub_str[0..i];
+                val = &sub_str[i+1..];
             }
+
+            data.entry(key)
+            .and_modify(|existing : &mut Value| match existing{
+                Value::Single(prev_val) => {
+                    *existing = Value::Multiple(vec![prev_val,val]);
+                }
+                Value::Multiple(vec) => vec.push(val),
+            }).or_insert(Value::Single(val));
+
         }
         QueryString{
             data
